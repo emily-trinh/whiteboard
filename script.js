@@ -1,9 +1,13 @@
 const canvas = document.getElementById("main");
 const ctx = canvas.getContext("2d");
 
+let strokes = [];
+let undoneStrokes = [];
+let currentStroke = null;
+
 let currentColour = "#000000";
 let currentSize = 2;
-let currentStroke = null;
+
 
 let drawing = false;
 let lastX, lastY;
@@ -17,6 +21,8 @@ const sizePicker = document.getElementById("sizePicker");
 sizePicker.addEventListener("input", (e) => {
     currentSize = Number(e.target.value);
 });
+
+
 
 
 function resizeCanvas() {
@@ -70,9 +76,74 @@ canvas.addEventListener("mousemove", (e) => {
     lastY = y;
 });
 
-// when the mouse is released, stop drawing
+// when the mouse is released, save stroke and stop drawing
 canvas.addEventListener("mouseup", () => {
+    if (currentStroke != null) {
+        strokes.push(currentStroke);
+        // clear the redo history, as new stroke invalidates it
+        undoneStrokes = [];
+    }
     drawing = false;
     currentStroke = null;
 });
-canvas.addEventListener("mouseleave", () => drawing = false);
+
+canvas.addEventListener("mouseleave", () => {
+    if (currentStroke != null) {
+        strokes.push(currentStroke);
+        undoneStrokes = [];
+        currentStroke = null;
+    }
+    drawing = false;
+});
+
+// redraw all strokes from the strokes array
+// used after undo/redo actions
+function redrawCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (const stroke of strokes) {
+    drawStroke(stroke);
+  }
+}
+
+// to draw all stored strokes from data, not mouse events
+function drawStroke(stroke) {
+  ctx.strokeStyle = stroke.colour;
+  ctx.lineWidth = stroke.size;
+  ctx.lineCap = "round";
+
+  ctx.beginPath();
+
+  const points = stroke.points;
+  if (points.length === 0) return;
+
+  ctx.moveTo(points[0].x, points[0].y);
+
+  for (let i = 1; i < points.length; i++) {
+    ctx.lineTo(points[i].x, points[i].y);
+  }
+
+  ctx.stroke();
+}
+
+document.getElementById("undoButton").addEventListener("click", () => {
+    if (strokes.length === 0)
+        return;
+
+    // pop and store the last stroke, then redraw everything
+    const undoneStroke = strokes.pop();
+    undoneStrokes.push(undoneStroke);
+
+    redrawCanvas();
+});
+
+document.getElementById("redoButton").addEventListener("click", () => {
+    if (strokes.length === 0)
+        return;
+
+    // move last stroke to strokes, then redraw everything
+    const stroke = undoneStrokes.pop();
+    strokes.push(stroke);
+
+    redrawCanvas();
+});

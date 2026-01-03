@@ -1,13 +1,16 @@
 const canvas = document.getElementById("main");
 const ctx = canvas.getContext("2d");
 
+ctx.lineJoin = "round";
+ctx.lineCap = "round";
+ctx.miterLimit = 1;
+
 let strokes = [];
 let undoneStrokes = [];
 let currentStroke = null;
 
 let currentColour = "#000000";
 let currentSize = 2;
-
 
 let drawing = false;
 let lastX, lastY;
@@ -21,8 +24,6 @@ const sizePicker = document.getElementById("sizePicker");
 sizePicker.addEventListener("input", (e) => {
     currentSize = Number(e.target.value);
 });
-
-
 
 
 function resizeCanvas() {
@@ -48,7 +49,7 @@ canvas.addEventListener("mousedown", (e) => {
     currentStroke = {
         colour: currentColour,
         size: currentSize,
-        points: [{ x: e.offsetX, y: e.offsetY}]
+        points: [{ x: e.offsetX, y: e.offsetY }]
     };
 
     lastX = e.offsetX;
@@ -99,31 +100,39 @@ canvas.addEventListener("mouseleave", () => {
 // redraw all strokes from the strokes array
 // used after undo/redo actions
 function redrawCanvas() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const dpr = window.devicePixelRatio || 1;
 
-  for (const stroke of strokes) {
-    drawStroke(stroke);
-  }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(dpr, dpr);
+
+    for (const stroke of strokes) {
+        drawStroke(stroke);
+    }
 }
 
 // to draw all stored strokes from data, not mouse events
 function drawStroke(stroke) {
-  ctx.strokeStyle = stroke.colour;
-  ctx.lineWidth = stroke.size;
-  ctx.lineCap = "round";
+    ctx.strokeStyle = stroke.colour;
+    ctx.lineWidth = stroke.size;
 
-  ctx.beginPath();
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.miterLimit = 1;
 
-  const points = stroke.points;
-  if (points.length === 0) return;
+    ctx.beginPath();
 
-  ctx.moveTo(points[0].x, points[0].y);
+    const points = stroke.points;
+    // no strokes
+    if (points.length === 0) return;
 
-  for (let i = 1; i < points.length; i++) {
-    ctx.lineTo(points[i].x, points[i].y);
-  }
+    ctx.moveTo(points[0].x, points[0].y);
 
-  ctx.stroke();
+    for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+    }
+
+    ctx.stroke();
 }
 
 document.getElementById("undoButton").addEventListener("click", () => {
@@ -138,7 +147,7 @@ document.getElementById("undoButton").addEventListener("click", () => {
 });
 
 document.getElementById("redoButton").addEventListener("click", () => {
-    if (strokes.length === 0)
+    if (undoneStrokes.length === 0)
         return;
 
     // move last stroke to strokes, then redraw everything

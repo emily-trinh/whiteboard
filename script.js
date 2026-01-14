@@ -28,6 +28,14 @@ sizePicker.addEventListener("input", (e) => {
     currentSize = Number(e.target.value);
 });
 
+document.getElementById("penTool").addEventListener("click", () => {
+    currentTool = "pen";
+});
+
+document .getElementById("eraserTool").addEventListener("click", () => {
+    currentTool = "eraser";
+});
+
 
 function resizeCanvas() {
 
@@ -130,12 +138,12 @@ function redrawCanvas() {
 
 // to draw all stored strokes from data, not mouse events
 function drawStroke(stroke) {
-    if (currentTool == "eraser") {
+    if (stroke.tool == "eraser") {
         ctx.globalCompositeOperation = "destination-out";
         ctx.strokeStyle = "rgba(0,0,0,1)";
     } else {
         ctx.globalCompositeOperation = "source-over";
-        ctx.strokeStyle = currentStroke.colour;
+        ctx.strokeStyle = stroke.colour;
     }
 
     ctx.lineWidth = stroke.size;

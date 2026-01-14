@@ -15,6 +15,9 @@ let currentSize = 2;
 let drawing = false;
 let lastX, lastY;
 
+// tools: pen (default), eraser
+let currentTool = "pen";
+
 const colourPicker = document.getElementById("colourPicker");
 colourPicker.addEventListener("input", (e) => {
     currentColour = e.target.value;
@@ -49,6 +52,7 @@ canvas.addEventListener("mousedown", (e) => {
     drawing = true;
 
     currentStroke = {
+        tool: currentTool,
         colour: currentColour,
         size: currentSize,
         points: [{ x: e.offsetX, y: e.offsetY }]
@@ -66,7 +70,16 @@ canvas.addEventListener("mousemove", (e) => {
     const y = e.offsetY;
 
     currentStroke.points.push({ x, y });
-    ctx.strokeStyle = currentStroke.colour;
+
+    // prepare stroke style based on tool
+    if (currentTool == "eraser") {
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.strokeStyle = "rgba(0,0,0,1)";
+    } else {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.strokeStyle = currentStroke.colour;
+    }
+
     ctx.lineWidth = currentStroke.size;
     ctx.lineCap = "round";
 
@@ -111,11 +124,20 @@ function redrawCanvas() {
     for (const stroke of strokes) {
         drawStroke(stroke);
     }
+
+    ctx.globalCompositeOperation = "source-over";
 }
 
 // to draw all stored strokes from data, not mouse events
 function drawStroke(stroke) {
-    ctx.strokeStyle = stroke.colour;
+    if (currentTool == "eraser") {
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.strokeStyle = "rgba(0,0,0,1)";
+    } else {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.strokeStyle = currentStroke.colour;
+    }
+
     ctx.lineWidth = stroke.size;
 
     ctx.lineJoin = "round";
